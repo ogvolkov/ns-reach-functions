@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Azure.WebJobs.Host;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using NsReach.Functions.Dto;
 using NsReach.Functions.Models;
@@ -15,9 +15,9 @@ namespace NsReach.Functions
     public static class Stations
     {
         [FunctionName("Stations")]
-        public static IActionResult Run([HttpTrigger(AuthorizationLevel.Anonymous, "get")]HttpRequest req, TraceWriter log)
+        public static IActionResult Run([HttpTrigger(AuthorizationLevel.Anonymous, "get")]HttpRequest req, ILogger log)
         {
-            log.Info("Stations");
+            log.LogInformation("Stations request");
 
             StationDto[] stationDtos;
 
