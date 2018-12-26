@@ -16,7 +16,11 @@ namespace NsReach.Functions
     public static class Reach
     {
         [FunctionName("Reach")]
-        public static IActionResult Run([HttpTrigger(AuthorizationLevel.Anonymous, "get")]HttpRequest req, ILogger log)
+        public static IActionResult Run(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get")]HttpRequest req,
+            ILogger log,
+            ExecutionContext context
+        )
         {
             log.LogInformation("Reach request");
 
@@ -31,7 +35,9 @@ namespace NsReach.Functions
 
             var serializer = new JsonSerializer();
 
-            using (var streamReader = File.OpenText(@"Data\times.json"))
+            string path = Path.Combine(context.FunctionAppDirectory, @"Data\times.json");
+
+            using (var streamReader = File.OpenText(path))
             using (var jsonReader = new JsonTextReader(streamReader))
             {
                 routeDtos = serializer.Deserialize<RouteDto[]>(jsonReader);

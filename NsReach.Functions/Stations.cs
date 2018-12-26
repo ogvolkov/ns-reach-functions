@@ -15,7 +15,11 @@ namespace NsReach.Functions
     public static class Stations
     {
         [FunctionName("Stations")]
-        public static IActionResult Run([HttpTrigger(AuthorizationLevel.Anonymous, "get")]HttpRequest req, ILogger log)
+        public static IActionResult Run(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get")]HttpRequest req,
+            ILogger log,
+            ExecutionContext context
+        )
         {
             log.LogInformation("Stations request");
 
@@ -23,7 +27,9 @@ namespace NsReach.Functions
 
             var serializer = new JsonSerializer();
 
-            using (var streamReader = File.OpenText(@"Data\stations.json"))
+            string path = Path.Combine(context.FunctionAppDirectory, @"Data\stations.json");
+
+            using (var streamReader = File.OpenText(path))
             using (var jsonReader = new JsonTextReader(streamReader))
             {
                 stationDtos = serializer.Deserialize<StationDto[]>(jsonReader);
