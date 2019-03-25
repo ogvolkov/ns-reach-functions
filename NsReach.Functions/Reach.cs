@@ -1,14 +1,13 @@
 
-using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using NsReach.Functions.Dto;
+using NsReach.Functions.Data;
 using NsReach.Functions.Models;
 
 namespace NsReach.Functions
@@ -16,7 +15,7 @@ namespace NsReach.Functions
     public static class Reach
     {
         [FunctionName("Reach")]
-        public static IActionResult Run(
+        public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get")]HttpRequest req,
             ILogger log,
             ExecutionContext context
@@ -31,33 +30,13 @@ namespace NsReach.Functions
                 return new BadRequestErrorMessageResult("from is missing");
             }
 
-            RouteDto[] routeDtos;
+            var repository = new TripTimesRepository(new CloudTableClientFactory());
 
-            var serializer = new JsonSerializer();
+            var tripTimes = await repository.GetTripTimes(from);
 
-            string path = Path.Combine(context.FunctionAppDirectory, @"Data\times.json");
+            var results = tripTimes.Select(it => new ReachableStationModel(it.RowKey, it.Time));
 
-            using (var streamReader = File.OpenText(path))
-            using (var jsonReader = new JsonTextReader(streamReader))
-            {
-                routeDtos = serializer.Deserialize<RouteDto[]>(jsonReader);
-            }
-
-            var reachableStations = routeDtos
-                .Where(route => route.From == from)
-                .Select(route => new ReachableStationModel(route.To, ParseTime(route.Time)));
-
-            return new OkObjectResult(reachableStations);
-        }
-
-        private static int ParseTime(string timeString)
-        {
-            var parts = timeString.Split(':');
-
-            int hours = int.Parse(parts[0]);
-            int minutes = int.Parse(parts[1]);
-
-            return hours * 60 + minutes;
+            return new OkObjectResult(results);
         }
     }
 }

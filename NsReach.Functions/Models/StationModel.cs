@@ -7,11 +7,11 @@ namespace NsReach.Functions.Models
 
         public string Name { get; }
 
-        public float Latitude { get; }
+        public double Latitude { get; }
 
-        public float Longitude { get; }
+        public double Longitude { get; }
 
-        public StationModel(string code, string name, float latitude, float longitude)
+        public StationModel(string code, string name, double latitude, double longitude)
         {
             Code = code;
             Name = name;

@@ -1,13 +1,15 @@
 
+using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using NsReach.Functions.Dto;
+using Microsoft.WindowsAzure.Storage;
+using NsReach.Functions.Data;
 using NsReach.Functions.Models;
 
 namespace NsReach.Functions
@@ -15,7 +17,7 @@ namespace NsReach.Functions
     public static class Stations
     {
         [FunctionName("Stations")]
-        public static IActionResult Run(
+        public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get")]HttpRequest req,
             ILogger log,
             ExecutionContext context
@@ -23,23 +25,13 @@ namespace NsReach.Functions
         {
             log.LogInformation("Stations request");
 
-            StationDto[] stationDtos;
+            var stationsRepository = new StationsRepository(new CloudTableClientFactory());
 
-            var serializer = new JsonSerializer();
+            var stations = await stationsRepository.GetAllStations();
 
-            string path = Path.Combine(context.FunctionAppDirectory, @"Data\stations.json");
+            var result = stations.Select(it => new StationModel(it.RowKey, it.Name, it.Latitude, it.Longitude));
 
-            using (var streamReader = File.OpenText(path))
-            using (var jsonReader = new JsonTextReader(streamReader))
-            {
-                stationDtos = serializer.Deserialize<StationDto[]>(jsonReader);
-            }
-
-            var stations = stationDtos.Select(it =>
-                new StationModel(it.Code, it.Name, float.Parse(it.Lat), float.Parse(it.Lon))
-            );
-
-            return new OkObjectResult(stations);
+            return new OkObjectResult(result);
         }
     }
 }
